@@ -1,0 +1,145 @@
+---
+title: "Clinical Data"
+author: "Kevin Putschko"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  word_document: 
+    toc: yes
+    pandoc_args:
+      '--lua-filter=pagebreak.lua'
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# Note in the above YAML config
+# doc does not, so we add an outside function definition, located in project dir
+# word_document:
+#     pandoc_args:
+#       '--lua-filter=pagebreak.lua'
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+pacman::p_load(tidyverse, haven, flextable, scales)
+data_dem <- read_sas("data/David Bosak/demog.sas7bdat")
+
+```
+
+```{r data-prep}
+
+# The base table we'll be using
+data_demog_table_base <- 
+  data_dem %>% 
+  select(TRTC, AGE, AGEC, SEX, RACE) %>% 
+  group_by(TRTC)
+  
+
+# Split by categorical and numeric
+data_demog_table_numeric <- 
+  data_demog_table_base %>% 
+  summarise_if(is.double, .funs = c("length", "median", "mean", "sd", "min", "max")) %>% 
+  mutate(str_mean = number(mean, trim = FALSE),
+         str_sd = number(sd, accuracy = 0.1, trim = FALSE),
+         N = number(length),
+         `Mean (SD)` = str_glue("{str_mean} ({str_sd})") %>% as.character(),
+         Median = number(median, accuracy = 0.1),
+         Range = str_c(min, max, sep = "-")) %>% 
+  select(TRTC, N:Range) %>% 
+  pivot_longer(-TRTC, 
+               names_to = "label",
+               values_to = "str_value") %>% 
+  pivot_wider(names_from = TRTC, 
+              values_from = str_value) %>% 
+  mutate(demo = "AGE") # This will have to be adjusted with more numeric cols
+
+data_demog_table_category <- 
+  data_demog_table_base %>% 
+  select(-AGE) %>% # Change this when more numeric cols are present 
+  pivot_longer(-TRTC, names_to = "demo", values_to = "label") %>% 
+  count(TRTC, demo, label) %>%
+  group_by(TRTC, demo) %>% 
+  mutate(p = n / sum(n)) %>% 
+  ungroup() %>% 
+  mutate(str_n = number(n, trim = FALSE),
+         str_p = percent(p, 0.1, trim = FALSE),
+         str_value = str_glue("{str_n} ({str_p})")) %>% 
+  select(TRTC, demo, label, str_value) %>%
+  spread(TRTC, str_value)
+
+
+# Get grand totals
+data_demog_table_totals_cat <- 
+  data_demog_table_base %>% 
+  ungroup() %>% 
+  select(-AGE, -TRTC) %>% # Change this when more numeric cols are present 
+  pivot_longer(cols = everything(), names_to = "demo", values_to = "label") %>% 
+  count(demo, label) %>%
+  group_by(demo) %>% 
+  mutate(p = n / sum(n)) %>% 
+  mutate(str_n = number(n, trim = FALSE),
+         str_p = percent(p, 0.1, trim = FALSE),
+         str_value = str_glue("{str_n} ({str_p})")) %>% 
+  mutate(TRTC = "Grand Total") %>% 
+  select(TRTC, demo, label, str_value) %>% 
+  spread(TRTC, str_value) 
+  
+data_demog_table_totals_num <- 
+  data_demog_table_base %>% 
+  ungroup() %>% 
+  summarise_at("AGE", .funs = c("length", "median", "mean", "sd", "min", "max")) %>% 
+  mutate(str_mean = number(mean, trim = FALSE),
+         str_sd = number(sd, accuracy = 0.1, trim = FALSE),
+         N = number(length),
+         `Mean (SD)` = str_glue("{str_mean} ({str_sd})") %>% as.character(),
+         Median = number(median, accuracy = 0.1),
+         Range = str_c(min, max, sep = "-")) %>% 
+  select(N:Range) %>% 
+  pivot_longer(cols = everything(),
+               names_to = "label",
+               values_to = "Grand Total") %>% 
+  mutate(demo = "AGE") # This will have to be adjusted with more numeric cols
+
+
+# Create final summary table
+data_demog_table_full_summary <- 
+  bind_rows(data_demog_table_category,
+            data_demog_table_numeric) %>% 
+  left_join(
+    bind_rows(data_demog_table_totals_cat,
+              data_demog_table_totals_num)) %>% 
+  arrange(demo) %>% 
+  ungroup() %>% 
+  mutate(demo = ifelse(demo == "AGEC", "Age Group", str_to_title(demo)))
+
+```
+
+\newpage
+
+# Introduction
+
+This time we'll be using **`flextable`** to create the summary table.  This package is meant to create tables for **Microsoft Office** output, and is part of the `officer` family of packages.  The caveat here is that this package does not do any transformations of the data, so all the summary work needs to be done in advance.  This package simply helps with the formatting and styles of the table.
+
+\newpage
+
+# Demographics
+
+Here we see the `flextable` output.  
+
+```{r flextable}
+# FT does not allow for data transformations!
+
+data_demog_table_full_summary %>% 
+  as_grouped_data("demo") %>% 
+  flextable() %>% 
+  set_header_labels(demo = "", label = "") %>% 
+  autofit() %>% 
+  bold(part = "header") %>% 
+  bold(part = "body", j = "demo") %>% 
+  # italic(part = "body", j = "label") %>% 
+  fontsize(j = "label", size = 9) %>% 
+  vline(j = "`Drug C`", border = officer::fp_border()) %>% 
+  add_header_lines(values = "Table 1.0 - Patient Demographics") %>% 
+  add_footer_lines(values = c("User: KP", str_glue("Date: {Sys.time()}")))
+  
+```
+
+

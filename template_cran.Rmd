@@ -1,0 +1,112 @@
+---
+title: "CRAN Package Downloads"
+author: "Kevin Putschko"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warn = FALSE, message = FALSE)
+
+pacman::p_load(tidyverse, lubridate, flextable, reactable, htmltools)
+pacman::p_load_gh("metacran/cranlogs", "rstudio/gt")
+```
+
+```{r data-get}
+data_raw <- 
+  installed.packages()[ ,1] %>% 
+  cran_downloads(when = "last-month") %>% 
+  as_tibble()
+```
+
+# Introduction
+
+This time around we're going to take a small look at the **reactable** package, which allows use to create interactive tables.  Note this will only work with HTML output format.  We're getting this data from CRAN, the central R repository for all R package libraries.  This table ranges from `r data_raw$date %>% min()` to `r data_raw$date %>% max()` and includes the Top 10 packages downloaded per week.
+
+Notice we can click each row to expand the dates, and each package name is a clickable link to the CRAN page for that particular package.
+
+
+```{r table-gt}
+# dates_weekday <- 
+#   data_raw %>% 
+#   distinct(date) %>% 
+#   mutate(weekday = wday(date, label = TRUE),
+#          weekend = if_else(weekday %in% c("Sat", "Sun"), "Weekend", "Weekday")) %>% 
+#   select(-weekday) %>% 
+#   chop(date) %>% 
+#   deframe() %>% 
+#   map(format, "%Y-%m-%d")
+# 
+# data_raw %>% 
+#   spread(date, count) %>% 
+#   gt(rowname_col = "package") %>% 
+#   tab_header("Download Count of Individual Tidyverse Packages",
+#              subtitle = str_glue("Between dates {data_raw$date %>% min()} and {data_raw$date %>% max()}")) %>% 
+#   fmt_number(TRUE, decimals = 0) %>% 
+#   tab_stubhead("Packages") %>% 
+#   tab_options(
+#     column_labels.font.size = "smaller",
+#     table.font.size = "smaller",
+#     row.padding = px(5)
+#   ) %>% 
+#   tab_spanner(label = "Weekend",
+#               columns = dates_weekday$Weekend) %>% 
+#   tab_spanner(label = "Weekday",
+#               columns = dates_weekday$Weekday) %>% 
+#   summary_rows(fns = list("Daily Total" = "sum"), 
+#                decimals = 0)
+```
+
+```{r table-long}
+# data_raw %>%
+#   gt(groupname_col = "package",
+#      rowname_col = "date") %>%
+#   tab_header("Download Count of Individual Tidyverse Packages",
+#              subtitle = str_glue("Between dates {data_raw$date %>% min()} and {data_raw$date %>% max()}")) %>%
+#   fmt_number(columns = TRUE, decimals = 0) %>%
+#   summary_rows(groups = TRUE,
+#                fns = list('Package Total' = "sum"),
+#                formatter = fmt_number, decimals = 0) %>%
+#   tab_options(
+#     summary_row.background.color = "#ACEACE",
+#     row_group.background.color = "#FFEFDB"
+#   )
+```
+
+```{r table-rt, warning=FALSE}
+data_raw %>% 
+  mutate(week = isoweek(date)) %>% 
+  group_by(week) %>% 
+  mutate(label = str_glue("Week {week}: {min(date) %>% format('%m/%d/%Y')} - {max(date) %>% format('%m/%d/%Y')}")) %>% 
+  group_by(label, package) %>% 
+  summarise(sum = sum(count)) %>% 
+  arrange(label, -sum) %>%
+  top_n(10, sum) %>% 
+  ungroup() %>% 
+  reactable(outlined = TRUE,
+            striped = TRUE,
+            highlight = TRUE,
+            groupBy = "label",
+            columns = list( 
+              label = colDef(name = "Week", width = 350),
+              package = colDef("Top 10 Packages",
+                               cell = function(value, index){
+                                 url <- str_glue("https://cran.r-project.org/web/packages/{.[index, 'package']}/index.html")
+                                 htmltools::tags$a(href = url, target = "_blank", as.character(value))
+                               }),
+              sum = colDef(name = "Downloads",
+                           aggregate = "sum",
+                           defaultSortOrder = "desc",
+                           format = colFormat(separators = TRUE),
+                           # cell = function(value){
+                           #   width <- value / max(.$value)
+                           #   bar <- div(class = "bar-chart",
+                           #              style = list(marginRight = "6px"),
+                           #              div(class = "bar", style = list(width = width, backgroundColor = "#3fc1c9")))
+                           #   
+                           #   div(class = "bar-cell", span(class = "number", value), bar)
+                           # }
+              )
+            )
+  )
+```

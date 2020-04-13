@@ -1,0 +1,161 @@
+---
+title: "Twitter Tweets"
+author: "Kevin Putschko"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+header-includes:
+  - \usepackage{pdflscape}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage[table]{xcolor}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage[normalem]{ulem}
+output: 
+  pdf_document: 
+    number_sections: yes
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+params:
+  param_1: '#rstats'
+---
+
+```{r setup, include=FALSE}
+# Note in above YAML config
+# header-includes loads new packages,
+# here we load pdf landscape functions and definitions
+
+options(kableExtra.latex.load_packages = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+
+pacman::p_load_gh("rstudio/gt")
+pacman::p_load(tidyverse, rtweet, lubridate, ggrepel, 
+               tidytext, widyr, kableExtra,
+               ggraph, igraph)
+
+twitter_hashtag <- params$param_1
+
+```
+
+\newpage
+
+# Introduction
+
+Notice the Table of Contents in the page above, and the new page here.  With R Markdown, we can easily incorporate *LaTeX* into our RMD documents.  Here we're using the simply `\newpage` function to act as a page break.  
+
+In this report, we're going to look at the 1000 most recent tweets containing the *`r twitter_hashtag`* hashtag.  This is done using the `rtweet` package, which requires nothing more than a user id and password to access Twitter.  
+
+Notice that this table is too long to fit on a single page, so it spreads across multiple pages while maintaining the headers across pages. This table was created using the `kableExtra` package and the `kable` function.
+
+```{r get-tweet}
+data_tweets <- 
+  search_tweets(q = twitter_hashtag, 
+                n = 1000, 
+                type = "mixed",
+                include_rts = FALSE)
+
+data_tweet_small <- 
+  data_tweets %>% 
+  select(created_at, hashtags, retweet_count, favorite_count) %>% 
+  rowid_to_column("tweet_id") %>% 
+  unnest(hashtags)  
+
+data_tweet_summary <- 
+  data_tweet_small %>% 
+  group_by(hashtags) %>% 
+  summarise(count = n(),
+            count_rt = sum(retweet_count),
+            count_fv = sum(favorite_count)) %>% 
+  arrange(-count, -count_rt) 
+
+data_tweet_summary %>% 
+  kable("latex", 
+        longtable = TRUE,
+        booktabs = TRUE,
+        caption = str_c("Which hashtags show up with \\", twitter_hashtag, "?"),
+        col.names = c("Hashtag", "Count", "Retweet Count", "Favorite Count")) %>% 
+  kable_styling(latex_options = c("hold_position", "repeat_header"))
+```
+
+\newpage
+
+# Chatter Plot
+
+This is just a chart showing which hashtags are most used with `r twitter_hashtag`. 
+
+```{r chatter-plot}
+data_tweet_summary %>% 
+  filter(count > 10) %>% 
+  filter(hashtags != "rstats") %>% 
+  ggplot(aes(y = count_rt, 
+             x = count,
+             color = count_fv,
+             size = count,
+             label = hashtags)) + 
+  geom_text_repel(segment.alpha = 0) +
+  scale_color_gradient(high = "green3", 
+                       low = "violetred",
+                       trans = "log10",
+                       name = "Number of Favorites",
+                       guide = guide_colorbar(direction = "horizontal",
+                                              title.position = "top")) +
+  scale_size_continuous(range = c(2, 6), guide = FALSE) +
+  labs(title = "Hashtag Co-Occurance with #rstats",
+       subtitle = "Limited to hashtags appearing in more than 10 tweets",
+       caption = "Pulled from the most recent 1000 tweets as of " %>% str_c(Sys.time()),
+       x = "Number of Tweets",
+       y = "Number of Retweets") +
+  theme_minimal()
+```
+
+\newpage
+\blandscape
+
+# Co-Occurance Chart
+
+This is a co-occurance chat showing which hashtags show up together.  Notice the page is flipped horizontally, however the page number is still in the original orientation.  This is an issue I'm looking into.
+
+```{r Co-Occurance}
+data_pairs_c <- 
+  data_tweet_small %>% 
+  pairwise_cor(hashtags, tweet_id, sort = TRUE)
+
+data_pairs <- 
+  data_tweet_small %>% 
+  pairwise_count(hashtags, tweet_id, sort = TRUE) %>% 
+  left_join(data_pairs_c)  
+
+# data_pairs %>% 
+#   filter(str_to_lower(item2) != "rstats") %>% 
+#   top_n(200, n) %>% 
+#   distinct(n, correlation, .keep_all = TRUE) %>% 
+#   arrange(-n) 
+
+data_pairs %>%   
+  top_n(500, n) %>% 
+  filter(correlation > .15) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_node_text(aes(label = name), repel = TRUE, segment.alpha = 0) +
+  labs(title = "Hashtags that appear in the same tweet",
+       subtitle = "Limited to the top 500 hashtags",
+       caption = "Pulled from the most recent 1000 tweets as of " %>% str_c(Sys.time())) +
+  theme_void()
+
+```
+
+\elandscape
+\newpage
+
+# Conclusion
+
+PDF documents are bit more complex than HTML documents, but are also more conducive to incorporating LaTeX formatting and functions. 
+

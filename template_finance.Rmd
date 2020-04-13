@@ -1,0 +1,100 @@
+---
+title: "Financial Reporting"
+author: "Kevin Putschko"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+params:
+  param_1: ^GSPC
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+pacman::p_load(tidyverse, lubridate, tidyquant, scales)
+pacman::p_load_gh("rstudio/gt")
+
+```
+
+```{r get-data}
+# Set symbol for lookup
+symbol_lookup <- params$param_1
+symbol_label <- symbol_lookup %>% str_remove("\\^")
+
+# Get the data
+symbol_data <- 
+  symbol_lookup %>% 
+  tq_get() %>% 
+  arrange(desc(date))
+
+```
+
+## Introduction
+
+In this document, we're going to pull stock information from the past two weeks for the **`r symbol_label`** stock symbol.  We're using the package `tidyquant` to easily pull this stock data from *Yahoo Finance*.  
+
+## Stock Performance
+
+The following table was created using the experimental `gt` package.  This package allows us to create headers, footers, references, while also formatting each column and adjusting the style as needed.  
+
+We can easily pull values from this table and use it in this paragraph using R functions in the background.  For example, the most recent date, `r symbol_data$date[[1]]`, opened at `r symbol_data$open[[1]] %>% dollar()` and closed at `r symbol_data$close[[1]] %>% dollar()`.  These values will update on their own, and I'll never have to update this paragraph.  
+
+```{r pretty-table}
+# Use the last two weeks of data
+date_now <- Sys.Date()
+date_old <- date_now - days(15)
+
+# Use html arrows for changes in stock
+arrow_up <- "<span style=\"color:green\">&#9650;</span>"
+arrow_down <- "<span style=\"color:red\">&#9660;</span>"
+
+symbol_data %>% 
+  filter(date >= date_old, 
+         date <= date_now) %>% 
+  select(-adjusted) %>% 
+  gt() %>% 
+  tab_header(title = symbol_label,
+             subtitle = str_glue("{date_old} to {date_now}")) %>% 
+  fmt_date(vars(date), date_style = 7) %>% 
+  fmt_currency(vars(open, high, low, close), 
+               currency = "USD") %>% 
+  fmt_number(vars(volume), 
+             scale_by = 1 / 1E9,
+             pattern = "{x}B") %>% 
+  text_transform(
+    locations = cells_data(
+      columns = "close",
+      rows = close > open),
+    fn = function(x) str_c(x, arrow_up, sep = " ")) %>% 
+  text_transform(
+    locations = cells_data(
+      columns = "close",
+      rows = close < open),
+    fn = function(x) str_c(x, arrow_down, sep = " ")) %>% 
+  cols_label(.list = 
+               tibble(colnames(.), 
+                      colnames(.) %>% str_to_title()) %>% 
+               deframe()) %>% 
+  tab_footnote(footnote = "*The **B** here refers to 'billion'*" %>% md(), 
+               locations = cells_column_labels(vars(volume))) %>% 
+  tab_source_note("Data comes from Yahoo Finance via `tidyquant` in R" %>% md())
+
+```
+
+## Charts
+
+The following **candlestick** chart shows us the closing price of `r symbol_label` over the last 10 years. This chart was created using functions from the `tidyquant` package.
+
+```{r chart}
+symbol_data %>% 
+  ggplot(aes(x = date, y = close)) +
+  geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
+  labs(title = str_c(symbol_label, "Closing Price", sep = " "),
+       subtitle = "Candlestick Chart",
+       y = NULL, x = NULL) + 
+  scale_y_continuous(labels = scales::dollar_format()) +
+  theme_tq()
+```
+
+## Conclusion
+
+R Markdown is easiest to use when output is stored as HTML.  In this way, RMD is useful for creating dashboards, websites, digital books, and HTML based presentations.

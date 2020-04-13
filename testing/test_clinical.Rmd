@@ -1,0 +1,316 @@
+---
+title: "Bosak's Data"
+author: "Kevin Putschko"
+date: "11/6/2019"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+pacman::p_load(tidyverse, haven, flextable, scales, kableExtra, atable)
+pacman::p_load_gh("rstudio/gt")
+
+
+data_list_raw <- 
+  dir("data/David Bosak", full.names = TRUE, pattern = ".sas7bdat") %>% 
+  enframe() %>% 
+  mutate(name = str_extract(value, "[^\\/][\\w]+(?=\\.)"),
+         data = map(value, haven::read_sas),
+         labels = map_depth(data, 2, attr, "labels") %>% map(enframe, "columns", "labels")) %>% 
+  print()
+
+data_list <- 
+  data_list_raw %>% 
+  select(name, data) %>% 
+  deframe() 
+
+data_dictionary <- 
+  data_list_raw %>% 
+  select(name, labels) %>% 
+  mutate(labels = map(labels, unnest, labels)) %>% 
+  deframe()
+```
+
+# Demographics
+
+```{r table-1}
+# With this we can recreate Bosak/Table 1
+# Treatment Group by Age Numeric, Age Category, Sex Category, Race Category
+# Numeric: N, Mean (SD), Median, Range
+# Category: N, %
+
+# --- Explore Data
+# data_dictionary %>% pluck("demog") %>% View()
+# data_list %>% pluck("demog") %>% count(PATNUM)
+# data_list %>% pluck("demog") %>% count(TRTCTX, sort = TRUE)
+# data_list %>% pluck("demog") %>% count(TRTCTXC, sort = TRUE)
+# data_list %>% pluck("demog") %>% count(TRTC, sort = TRUE)
+# data_list %>% pluck("demog") %>% count(AGE, sort = TRUE)
+# data_list %>% pluck("demog") %>% count(AGEC, sort = TRUE)
+# data_list %>% pluck("demog") %>% count(SEX, sort = TRUE)
+# data_list %>% pluck("demog") %>% count(RACE, sort = TRUE)
+
+# --- Create Long Data
+data_demog_long <- 
+  data_list %>% 
+  pluck("demog") %>% 
+  select(TRTC, AGE, AGEC, SEX, RACE) %>% 
+  arrange(AGE) %>% 
+  pivot_longer(cols = -c(TRTC, AGE),
+               names_to = "label",
+               values_to = "value") 
+
+
+
+# --- Table with Numeric Values
+data_demog_cats <- 
+  data_demog_long %>% 
+  group_by(TRTC, label, value) %>%
+  summarise(n = n()) %>% 
+  mutate(p = n / sum(n))
+
+
+# --- Table with all summary work done  
+data_demog_map <- 
+  data_list %>% 
+  pluck("demog") %>% 
+  distinct(TRTC, TRT)
+
+data_demog_table_base <- 
+  data_list %>% 
+  pluck("demog") %>% 
+  select(TRT, AGE, AGEC, SEX, RACE) %>% 
+  group_by(TRT)
+  
+
+data_demog_table_numeric <- 
+  data_demog_table_base %>% 
+  summarise_if(is.double, .funs = c("length", "median", "mean", "sd", "min", "max")) %>% 
+  mutate(str_mean = number(mean, trim = FALSE),
+         str_sd = number(sd, accuracy = 0.1, trim = FALSE),
+         N = number(length),
+         `Mean (SD)` = str_glue("{str_mean} ({str_sd})") %>% as.character(),
+         Median = number(median, accuracy = 0.1),
+         Range = str_c(min, max, sep = "-")) %>% 
+  left_join(data_demog_map) %>% 
+  select(TRTC, N:Range) %>% 
+  pivot_longer(-TRTC, 
+               names_to = "label",
+               values_to = "str_value") %>% 
+  pivot_wider(names_from = TRTC, 
+              values_from = str_value) %>% 
+  mutate(demo = "AGE") # This will have to be adjusted with more numeric cols
+
+data_demog_table_category <- 
+  data_demog_table_base %>% 
+  select(-AGE) %>% # Change this when more numeric cols are present 
+  pivot_longer(-TRT, names_to = "demo", values_to = "label") %>% 
+  count(TRT, demo, label) %>%
+  group_by(TRT, demo) %>% 
+  mutate(p = n / sum(n)) %>% 
+  ungroup() %>% 
+  mutate(str_n = number(n, trim = FALSE),
+         str_p = percent(p, 0.1, trim = FALSE),
+         str_value = str_glue("{str_n} ({str_p})")) %>% 
+  left_join(data_demog_map) %>% 
+  select(TRTC, demo, label, str_value) %>%
+  spread(TRTC, str_value)
+
+data_demog_table_totals_cat <- 
+  data_demog_table_base %>% 
+  ungroup() %>% 
+  select(-AGE, -TRT) %>% # Change this when more numeric cols are present 
+  pivot_longer(cols = everything(), names_to = "demo", values_to = "label") %>% 
+  count(demo, label) %>%
+  group_by(demo) %>% 
+  mutate(p = n / sum(n)) %>% 
+  mutate(str_n = number(n, trim = FALSE),
+         str_p = percent(p, 0.1, trim = FALSE),
+         str_value = str_glue("{str_n} ({str_p})")) %>% 
+  mutate(TRTC = "Grand Total") %>% 
+  select(TRTC, demo, label, str_value) %>% 
+  spread(TRTC, str_value) 
+  
+data_demog_table_totals_num <- 
+  data_demog_table_base %>% 
+  ungroup() %>% 
+  summarise_at("AGE", .funs = c("length", "median", "mean", "sd", "min", "max")) %>% 
+  mutate(str_mean = number(mean, trim = FALSE),
+         str_sd = number(sd, accuracy = 0.1, trim = FALSE),
+         N = number(length),
+         `Mean (SD)` = str_glue("{str_mean} ({str_sd})") %>% as.character(),
+         Median = number(median, accuracy = 0.1),
+         Range = str_c(min, max, sep = "-")) %>% 
+  select(N:Range) %>% 
+  pivot_longer(cols = everything(),
+               names_to = "label",
+               values_to = "Grand Total") %>% 
+  mutate(demo = "AGE") # This will have to be adjusted with more numeric cols
+
+
+data_demog_table_full_summary <- 
+  bind_rows(data_demog_table_category,
+            data_demog_table_numeric) %>% 
+  left_join(
+    bind_rows(data_demog_table_totals_cat,
+              data_demog_table_totals_num)) %>% 
+  arrange(demo) %>% 
+  ungroup() %>% 
+  mutate(demo = ifelse(demo == "AGEC", "Age Group", str_to_title(demo)))
+
+```
+
+## Demographics - GT Package
+
+```{r demog-gt}
+table_gt <- 
+  data_demog_cats %>% 
+  ungroup() %>% 
+  mutate(label = str_replace(label, "AGEC", "Age Group") %>% str_to_title()) %>%
+  pivot_wider(names_from = TRTC, values_from = c(n, p)) %>% 
+  
+  gt(groupname_col = "label") %>% 
+
+  # - Summary Rows do not currently work for 3+ groups!  
+  # summary_rows(
+  #   groups = TRUE,
+  #   columns = contains("n_"),
+  #   fns = list(N = ~sum(., na.rm = TRUE)))
+
+  fmt_percent(columns = contains("p_"), decimals = 1) %>% 
+  fmt(columns = vars(value), fns = str_to_title) %>% 
+  
+  cols_merge(col_1 = vars(`n_Drug A`), col_2 = vars(`p_Drug A`), pattern = "{1} ({2})") %>% 
+  cols_merge(col_1 = vars(`n_Drug B`), col_2 = vars(`p_Drug B`), pattern = "{1} ({2})") %>% 
+  cols_merge(col_1 = vars(`n_Drug C`), col_2 = vars(`p_Drug C`), pattern = "{1} ({2})") %>% 
+  cols_label(`n_Drug A` = "Drug A",
+             `n_Drug B` = "Drug B",
+             `n_Drug C` = "Drug C",
+             value = "") %>% 
+  cols_align(align = "right", columns = "value") %>% 
+  
+  tab_header(title = "Table 1.0", 
+             subtitle = "Demographics and Baseline Characteristics") %>% 
+  tab_source_note(str_glue("*User: Kevin Putschko, {Sys.time()}*") %>% md()) %>% 
+  tab_source_note(str_glue("*Source: filepath*") %>% md()) 
+
+table_gt %>% as_rtf() %>% write_lines("testing/testing_gt.rtf")
+
+```
+
+## Demographics - FlexTable
+
+```{r demog-ft}
+# FT does not allow for data transformations!
+# all the data I'll need to create, must be done prior to flextable functions!
+
+# Emulate Bosak Table 1
+data_demog_table_full_summary %>% 
+  as_grouped_data("demo") %>% 
+  flextable() %>% 
+  set_header_labels(demo = "", label = "")
+  
+# Emulate Kramer Table 
+data_demog_table_base %>% 
+  rowid_to_column("id") %>% 
+  select(-AGE) %>% 
+  group_by(TRT) %>% 
+  add_count(name = "N") %>% 
+  pivot_longer(cols = -c(id, TRT, N),
+               names_to = "demo",
+               values_to = "category") %>% 
+  group_by(TRT, demo, category) %>% 
+  add_count(name = "n") %>% 
+  mutate(p = n / N) %>% 
+  left_join(data_demog_map) %>% 
+  ungroup() %>% 
+  select(demo, category, TRTC, N, n, p) %>% 
+  distinct() %>% 
+  arrange(demo, category, TRTC) %>% 
+  mutate(p = p %>% percent(accuracy = 0.1)) %>%
+  as_grouped_data(c("demo", "category")) %>% 
+  flextable() %>% 
+  set_header_labels(demo = "", category = "") %>% 
+  # set_formatter(p = percent_format()) %>% 
+  autofit()
+  
+# data_demog_cats %>% 
+#   pivot_wider(names_from = TRTC, values_from = c(n, p)) %>% 
+#   as_grouped_data(groups = "label") %>% 
+#   flextable(col_keys = c(colnames(.), "Test")) %>% 
+# 
+#   set_header_labels(label = "Demographic",
+#                     value = "Group") %>% 
+#   set_formatter(`p_Drug A` = scales::percent_format()) %>% 
+#   compose(j = "Test",
+#           value = as_paragraph(str_glue("{`n_Drug A`} ({`p_Drug A` %>% scales::percent()})"))) %>%
+#   autofit() %>%
+#   add_footer_lines(str_glue("User: Kevin Putschko, {Sys.time()}")) %>% 
+#   add_footer_lines(str_glue("Source: <filepath>")) %>% 
+#   theme_alafoli()
+```
+
+## Demographics - kableExtra
+
+```{r demog-ke}
+# This would require some extra work to identify the indices for groups
+
+data_demog_cats %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE) %>% 
+  collapse_rows(columns = 1:2)
+
+```
+
+## Demographics - etc
+
+```{r demog-etc}
+
+
+# This is dumb, how am I supposed to read the output?
+# pacman::p_load(gmodels)
+# CrossTable(data_demog_long$TRTC, 
+#            data_demog_long$value, 
+#            format = "SAS") 
+# pacman::p_load(frequency)
+# options(frequency_open_output = TRUE)
+# freq_test <- 
+#   data_demog_long %>% 
+#   select(-AGE) %>% 
+#   group_nest(TRTC, label) %>% 
+#   mutate(table1 = map(data, freq))
+# 
+# freq_test$table1[[1]]
+# 
+# frequency::big5 %>% freq()
+
+
+
+```
+
+## Demographics - aTable
+
+```{r dem-at}
+data_demog %>% 
+  atable(target_cols = c("AGE", "AGEC", "RACE", "SEX"),
+         group_col = "TRTC",
+         format_to = "Latex")
+
+
+```
+
+## Demo - Stargazer
+
+```{r}
+pacman::p_load(stargazer)
+
+data_demog %>%
+  stargazer()
+```
+

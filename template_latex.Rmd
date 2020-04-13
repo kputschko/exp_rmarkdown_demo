@@ -1,0 +1,139 @@
+---
+title: "LaTeX PDF Output"
+author: "Kevin Putschko"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  pdf_document:
+    toc: yes
+    extra_dependencies: ["lastpage", "pdflscape", "fancyhdr"]
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage[table]{xcolor}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage[normalem]{ulem}
+params:
+  param_1: Kevin Putschko
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+options(kableExtra.latex.load_packages = FALSE)
+
+pacman::p_load(tidyverse, knitr, kableExtra, scales)
+
+# username <- params$param_1
+username <- "Kevin Putschko"
+```
+
+\pagestyle{fancy}
+
+\lhead{\textit{`r username`}}
+\rhead{PDF LaTeX}
+
+\cfoot{}
+\rfoot{Page \thepage\ of\ \pageref{LastPage}}
+\lfoot{User: `r username` \\ Date: \today \\ Source: a/file/path.txt}
+
+\newcommand{\bls}{\begin{landscape}}
+\newcommand{\els}{\end{landscape}}
+
+
+\newpage
+# Introduction
+
+`LaTeX` is a type setting system built for technical or scientific documents in the 1970's.  To use it with R, you'll need to install one of a handful of Latex packages, like `tinytex`.  
+
+We use `LaTeX` with RMD here because it is simple to incorporate into an R Markdown document once you get the hang of the syntax.
+
+This only works with PDF output, but it is quite flexible.  In the `R Markdown` document itself, we can load various `LaTeX` packages and include their functions with a simple call like `\rfoot` to place a footer in the lower right corner of the page.  
+
+\newpage
+# Wide Output, Landscape
+
+Here we rotate the page to landscape using the `pdflscape` package.  Note, however, that the headers and footers are not in ideal locations for this layout.  However, we do see that the table does stretch to a second page, while retaining the headers.  
+
+```{r wide-table}
+dplyr::storms %>% 
+  slice(1:50) %>% 
+  kable(longtable = TRUE, format = "latex") %>%
+  kable_styling(latex_options = c("repeat_header")) %>% 
+  landscape()
+```
+
+
+\newpage
+# Wide Output, Portrait
+
+However, if we just want to scale the table down to fit on a portrait orientation, we can use the `scale_down` option in `kableExtra`.
+
+```{r shrink-table}
+dplyr::storms %>% 
+  slice(1:50) %>% 
+  kable(format = "latex") %>%
+  kable_styling(latex_options = c("repeat_header", "scale_down"))
+```
+
+\newpage
+# Many Tables
+
+Now we're using a loop to output many tables from one master table, using the `kableExtra` package.
+
+```{r many-tables, results='asis'}
+table_nest <-
+  dplyr::storms %>% 
+  group_by(year, status) %>% 
+  count() %>%
+  group_by(year) %>% 
+  mutate(p = n / sum(n),
+         p = percent(p),
+         status = str_to_title(status)) %>% 
+  ungroup() %>% 
+  group_nest(year, .key = "table", keep = TRUE) %>% 
+  deframe()
+
+for (i in 1:length(table_nest)) {
+  
+  table_label <- table_nest[[i]] %>% filter(n == max(n))
+  table_year  <- table_label %>% pluck("year")
+  table_storm <- table_label %>% pluck("status") 
+  table_days  <- table_label %>% pluck("n") 
+  
+  table_nest[[i]] %>% 
+    kable(format = "latex", 
+          booktabs = TRUE, 
+          longtable = TRUE, 
+          caption = str_glue("Year {table_year}"),
+          label = str_c("Table ", i),
+          col.names = c("", "Type of Storm", "Days per Year", "Percent of Storms")) %>% 
+    column_spec(3:4, width = "3cm") %>% 
+    row_spec(0, bold = TRUE) %>% 
+    collapse_rows(columns = 1, valign = "middle") %>% 
+    kable_styling(latex_options = "repeat_header") %>% 
+    print()
+  
+  str_glue("This text is located within the loop.  We can pull out some values from this table.  For example,
+      the type of storm that occured most in the year {table_year} 
+      is a **{table_storm}** which was present over {table_days} days!") %>% 
+  cat()
+  
+  # Notice the two spaces and double backslash to register both a newline and a latex function
+  cat("  \\newpage")
+  
+}
+
+```
+
+
+\newpage
+# Conclusion
+
+I like the potential of `LaTeX` and PDF output!  Easy to create tables, and customize the pages.  Only issue is the landscape page with rotated headers and footers.
+

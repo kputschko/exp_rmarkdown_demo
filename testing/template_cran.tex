@@ -1,0 +1,475 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={What's the Weather},
+            pdfauthor={Kevin Putschko},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{What's the Weather}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Kevin Putschko}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{11/5/2019}
+
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{longtable}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\newline
+
+\hypertarget{introduction}{%
+\section{Introduction}\label{introduction}}
+
+Notes
+
+\newpage
+
+\hypertarget{this}{%
+\section{This}\label{this}}
+
+\begin{verbatim}
+## $Weekday
+## [1] "2019-10-29" "2019-10-30" "2019-10-31" "2019-11-01" "2019-11-04"
+## 
+## $Weekend
+## [1] "2019-11-02" "2019-11-03"
+\end{verbatim}
+
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{lrrrrrrr}
+\caption*{
+\large Download Count of Individual Tidyverse Packages\\ 
+\small Between dates 2019-10-29 and 2019-11-04\\ 
+} \\ 
+\toprule
+& \multicolumn{5}{c}{Weekday} & \multicolumn{2}{c}{Weekend} \\ 
+ \cmidrule(lr){2-6}\cmidrule(lr){7-8}
+Packages & 2019-10-29 & 2019-10-30 & 2019-10-31 & 2019-11-01 & 2019-11-04 & 2019-11-02 & 2019-11-03 \\ 
+\midrule
+broom & $17,781$ & $17,594$ & $16,597$ & $12,510$ & $16,691$ & $7,103$ & $7,352$ \\ 
+cli & $28,010$ & $25,593$ & $24,304$ & $19,106$ & $24,932$ & $10,748$ & $10,916$ \\ 
+crayon & $26,381$ & $24,733$ & $23,307$ & $18,594$ & $23,840$ & $10,374$ & $10,382$ \\ 
+dbplyr & $10,360$ & $10,087$ & $9,601$ & $7,524$ & $10,474$ & $4,585$ & $4,528$ \\ 
+dplyr & $44,149$ & $42,319$ & $40,498$ & $33,060$ & $39,746$ & $22,150$ & $23,426$ \\ 
+forcats & $14,910$ & $14,544$ & $13,643$ & $9,972$ & $14,125$ & $6,818$ & $6,966$ \\ 
+ggplot2 & $40,898$ & $38,987$ & $36,279$ & $28,541$ & $37,548$ & $18,041$ & $19,122$ \\ 
+haven & $15,971$ & $15,571$ & $14,528$ & $10,643$ & $15,169$ & $7,120$ & $7,372$ \\ 
+hms & $23,884$ & $28,654$ & $27,240$ & $20,247$ & $25,963$ & $12,008$ & $12,239$ \\ 
+httr & $21,684$ & $21,083$ & $20,364$ & $16,160$ & $20,149$ & $10,306$ & $10,500$ \\ 
+jsonlite & $25,950$ & $25,816$ & $24,284$ & $19,130$ & $24,380$ & $12,525$ & $12,912$ \\ 
+lubridate & $21,949$ & $22,173$ & $20,616$ & $17,450$ & $20,411$ & $12,530$ & $12,858$ \\ 
+magrittr & $119,976$ & $123,223$ & $122,215$ & $116,922$ & $95,607$ & $108,585$ & $108,784$ \\ 
+modelr & $12,618$ & $12,774$ & $12,687$ & $10,020$ & $13,822$ & $5,665$ & $5,900$ \\ 
+purrr & $32,059$ & $29,832$ & $28,684$ & $22,120$ & $28,487$ & $14,066$ & $14,384$ \\ 
+readr & $20,190$ & $18,839$ & $17,988$ & $13,536$ & $18,674$ & $8,545$ & $9,197$ \\ 
+reprex & $12,115$ & $12,242$ & $12,089$ & $9,574$ & $13,350$ & $5,446$ & $5,668$ \\ 
+rlang & $65,599$ & $63,048$ & $59,526$ & $46,677$ & $57,629$ & $27,803$ & $28,819$ \\ 
+rstudioapi & $16,120$ & $15,654$ & $14,964$ & $11,258$ & $15,012$ & $6,838$ & $6,981$ \\ 
+rvest & $14,366$ & $14,615$ & $14,219$ & $11,637$ & $15,430$ & $6,538$ & $6,765$ \\ 
+stringr & $32,475$ & $32,132$ & $30,955$ & $24,763$ & $30,921$ & $16,027$ & $16,543$ \\ 
+tibble & $37,269$ & $34,702$ & $32,675$ & $26,047$ & $33,699$ & $16,477$ & $17,168$ \\ 
+tidyr & $29,424$ & $28,420$ & $26,802$ & $22,257$ & $26,204$ & $16,016$ & $16,575$ \\ 
+tidyverse & $19,012$ & $19,641$ & $18,700$ & $14,950$ & $20,111$ & $9,458$ & $9,779$ \\ 
+xml2 & $16,919$ & $17,156$ & $15,418$ & $12,158$ & $16,042$ & $7,062$ & $7,146$ \\ 
+\bottomrule
+\end{longtable}
+
+\newpage
+
+\hypertarget{that}{%
+\section{That}\label{that}}
+
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{lr}
+\caption*{
+\large Download Count of Individual Tidyverse Packages\\ 
+\small Between dates 2019-10-29 and 2019-11-04\\ 
+} \\ 
+\toprule
+ & count \\ 
+\midrule
+\multicolumn{1}{l}{broom} \\ 
+\midrule
+2019-10-29 & $17,781$ \\ 
+2019-10-30 & $17,594$ \\ 
+2019-10-31 & $16,597$ \\ 
+2019-11-01 & $12,510$ \\ 
+2019-11-02 & $7,103$ \\ 
+2019-11-03 & $7,352$ \\ 
+2019-11-04 & $16,691$ \\ 
+\midrule 
+Package Total & $95,628$ \\ 
+\midrule
+\multicolumn{1}{l}{cli} \\ 
+\midrule
+2019-10-29 & $28,010$ \\ 
+2019-10-30 & $25,593$ \\ 
+2019-10-31 & $24,304$ \\ 
+2019-11-01 & $19,106$ \\ 
+2019-11-02 & $10,748$ \\ 
+2019-11-03 & $10,916$ \\ 
+2019-11-04 & $24,932$ \\ 
+\midrule 
+Package Total & $143,609$ \\ 
+\midrule
+\multicolumn{1}{l}{crayon} \\ 
+\midrule
+2019-10-29 & $26,381$ \\ 
+2019-10-30 & $24,733$ \\ 
+2019-10-31 & $23,307$ \\ 
+2019-11-01 & $18,594$ \\ 
+2019-11-02 & $10,374$ \\ 
+2019-11-03 & $10,382$ \\ 
+2019-11-04 & $23,840$ \\ 
+\midrule 
+Package Total & $137,611$ \\ 
+\midrule
+\multicolumn{1}{l}{dplyr} \\ 
+\midrule
+2019-10-29 & $44,149$ \\ 
+2019-10-30 & $42,319$ \\ 
+2019-10-31 & $40,498$ \\ 
+2019-11-01 & $33,060$ \\ 
+2019-11-02 & $22,150$ \\ 
+2019-11-03 & $23,426$ \\ 
+2019-11-04 & $39,746$ \\ 
+\midrule 
+Package Total & $245,348$ \\ 
+\midrule
+\multicolumn{1}{l}{dbplyr} \\ 
+\midrule
+2019-10-29 & $10,360$ \\ 
+2019-10-30 & $10,087$ \\ 
+2019-10-31 & $9,601$ \\ 
+2019-11-01 & $7,524$ \\ 
+2019-11-02 & $4,585$ \\ 
+2019-11-03 & $4,528$ \\ 
+2019-11-04 & $10,474$ \\ 
+\midrule 
+Package Total & $57,159$ \\ 
+\midrule
+\multicolumn{1}{l}{forcats} \\ 
+\midrule
+2019-10-29 & $14,910$ \\ 
+2019-10-30 & $14,544$ \\ 
+2019-10-31 & $13,643$ \\ 
+2019-11-01 & $9,972$ \\ 
+2019-11-02 & $6,818$ \\ 
+2019-11-03 & $6,966$ \\ 
+2019-11-04 & $14,125$ \\ 
+\midrule 
+Package Total & $80,978$ \\ 
+\midrule
+\multicolumn{1}{l}{ggplot2} \\ 
+\midrule
+2019-10-29 & $40,898$ \\ 
+2019-10-30 & $38,987$ \\ 
+2019-10-31 & $36,279$ \\ 
+2019-11-01 & $28,541$ \\ 
+2019-11-02 & $18,041$ \\ 
+2019-11-03 & $19,122$ \\ 
+2019-11-04 & $37,548$ \\ 
+\midrule 
+Package Total & $219,416$ \\ 
+\midrule
+\multicolumn{1}{l}{haven} \\ 
+\midrule
+2019-10-29 & $15,971$ \\ 
+2019-10-30 & $15,571$ \\ 
+2019-10-31 & $14,528$ \\ 
+2019-11-01 & $10,643$ \\ 
+2019-11-02 & $7,120$ \\ 
+2019-11-03 & $7,372$ \\ 
+2019-11-04 & $15,169$ \\ 
+\midrule 
+Package Total & $86,374$ \\ 
+\midrule
+\multicolumn{1}{l}{hms} \\ 
+\midrule
+2019-10-29 & $23,884$ \\ 
+2019-10-30 & $28,654$ \\ 
+2019-10-31 & $27,240$ \\ 
+2019-11-01 & $20,247$ \\ 
+2019-11-02 & $12,008$ \\ 
+2019-11-03 & $12,239$ \\ 
+2019-11-04 & $25,963$ \\ 
+\midrule 
+Package Total & $150,235$ \\ 
+\midrule
+\multicolumn{1}{l}{httr} \\ 
+\midrule
+2019-10-29 & $21,684$ \\ 
+2019-10-30 & $21,083$ \\ 
+2019-10-31 & $20,364$ \\ 
+2019-11-01 & $16,160$ \\ 
+2019-11-02 & $10,306$ \\ 
+2019-11-03 & $10,500$ \\ 
+2019-11-04 & $20,149$ \\ 
+\midrule 
+Package Total & $120,246$ \\ 
+\midrule
+\multicolumn{1}{l}{jsonlite} \\ 
+\midrule
+2019-10-29 & $25,950$ \\ 
+2019-10-30 & $25,816$ \\ 
+2019-10-31 & $24,284$ \\ 
+2019-11-01 & $19,130$ \\ 
+2019-11-02 & $12,525$ \\ 
+2019-11-03 & $12,912$ \\ 
+2019-11-04 & $24,380$ \\ 
+\midrule 
+Package Total & $144,997$ \\ 
+\midrule
+\multicolumn{1}{l}{lubridate} \\ 
+\midrule
+2019-10-29 & $21,949$ \\ 
+2019-10-30 & $22,173$ \\ 
+2019-10-31 & $20,616$ \\ 
+2019-11-01 & $17,450$ \\ 
+2019-11-02 & $12,530$ \\ 
+2019-11-03 & $12,858$ \\ 
+2019-11-04 & $20,411$ \\ 
+\midrule 
+Package Total & $127,987$ \\ 
+\midrule
+\multicolumn{1}{l}{magrittr} \\ 
+\midrule
+2019-10-29 & $119,976$ \\ 
+2019-10-30 & $123,223$ \\ 
+2019-10-31 & $122,215$ \\ 
+2019-11-01 & $116,922$ \\ 
+2019-11-02 & $108,585$ \\ 
+2019-11-03 & $108,784$ \\ 
+2019-11-04 & $95,607$ \\ 
+\midrule 
+Package Total & $795,312$ \\ 
+\midrule
+\multicolumn{1}{l}{modelr} \\ 
+\midrule
+2019-10-29 & $12,618$ \\ 
+2019-10-30 & $12,774$ \\ 
+2019-10-31 & $12,687$ \\ 
+2019-11-01 & $10,020$ \\ 
+2019-11-02 & $5,665$ \\ 
+2019-11-03 & $5,900$ \\ 
+2019-11-04 & $13,822$ \\ 
+\midrule 
+Package Total & $73,486$ \\ 
+\midrule
+\multicolumn{1}{l}{purrr} \\ 
+\midrule
+2019-10-29 & $32,059$ \\ 
+2019-10-30 & $29,832$ \\ 
+2019-10-31 & $28,684$ \\ 
+2019-11-01 & $22,120$ \\ 
+2019-11-02 & $14,066$ \\ 
+2019-11-03 & $14,384$ \\ 
+2019-11-04 & $28,487$ \\ 
+\midrule 
+Package Total & $169,632$ \\ 
+\midrule
+\multicolumn{1}{l}{readr} \\ 
+\midrule
+2019-10-29 & $20,190$ \\ 
+2019-10-30 & $18,839$ \\ 
+2019-10-31 & $17,988$ \\ 
+2019-11-01 & $13,536$ \\ 
+2019-11-02 & $8,545$ \\ 
+2019-11-03 & $9,197$ \\ 
+2019-11-04 & $18,674$ \\ 
+\midrule 
+Package Total & $106,969$ \\ 
+\midrule
+\multicolumn{1}{l}{reprex} \\ 
+\midrule
+2019-10-29 & $12,115$ \\ 
+2019-10-30 & $12,242$ \\ 
+2019-10-31 & $12,089$ \\ 
+2019-11-01 & $9,574$ \\ 
+2019-11-02 & $5,446$ \\ 
+2019-11-03 & $5,668$ \\ 
+2019-11-04 & $13,350$ \\ 
+\midrule 
+Package Total & $70,484$ \\ 
+\midrule
+\multicolumn{1}{l}{rlang} \\ 
+\midrule
+2019-10-29 & $65,599$ \\ 
+2019-10-30 & $63,048$ \\ 
+2019-10-31 & $59,526$ \\ 
+2019-11-01 & $46,677$ \\ 
+2019-11-02 & $27,803$ \\ 
+2019-11-03 & $28,819$ \\ 
+2019-11-04 & $57,629$ \\ 
+\midrule 
+Package Total & $349,101$ \\ 
+\midrule
+\multicolumn{1}{l}{rstudioapi} \\ 
+\midrule
+2019-10-29 & $16,120$ \\ 
+2019-10-30 & $15,654$ \\ 
+2019-10-31 & $14,964$ \\ 
+2019-11-01 & $11,258$ \\ 
+2019-11-02 & $6,838$ \\ 
+2019-11-03 & $6,981$ \\ 
+2019-11-04 & $15,012$ \\ 
+\midrule 
+Package Total & $86,827$ \\ 
+\midrule
+\multicolumn{1}{l}{rvest} \\ 
+\midrule
+2019-10-29 & $14,366$ \\ 
+2019-10-30 & $14,615$ \\ 
+2019-10-31 & $14,219$ \\ 
+2019-11-01 & $11,637$ \\ 
+2019-11-02 & $6,538$ \\ 
+2019-11-03 & $6,765$ \\ 
+2019-11-04 & $15,430$ \\ 
+\midrule 
+Package Total & $83,570$ \\ 
+\midrule
+\multicolumn{1}{l}{stringr} \\ 
+\midrule
+2019-10-29 & $32,475$ \\ 
+2019-10-30 & $32,132$ \\ 
+2019-10-31 & $30,955$ \\ 
+2019-11-01 & $24,763$ \\ 
+2019-11-02 & $16,027$ \\ 
+2019-11-03 & $16,543$ \\ 
+2019-11-04 & $30,921$ \\ 
+\midrule 
+Package Total & $183,816$ \\ 
+\midrule
+\multicolumn{1}{l}{tibble} \\ 
+\midrule
+2019-10-29 & $37,269$ \\ 
+2019-10-30 & $34,702$ \\ 
+2019-10-31 & $32,675$ \\ 
+2019-11-01 & $26,047$ \\ 
+2019-11-02 & $16,477$ \\ 
+2019-11-03 & $17,168$ \\ 
+2019-11-04 & $33,699$ \\ 
+\midrule 
+Package Total & $198,037$ \\ 
+\midrule
+\multicolumn{1}{l}{tidyr} \\ 
+\midrule
+2019-10-29 & $29,424$ \\ 
+2019-10-30 & $28,420$ \\ 
+2019-10-31 & $26,802$ \\ 
+2019-11-01 & $22,257$ \\ 
+2019-11-02 & $16,016$ \\ 
+2019-11-03 & $16,575$ \\ 
+2019-11-04 & $26,204$ \\ 
+\midrule 
+Package Total & $165,698$ \\ 
+\midrule
+\multicolumn{1}{l}{xml2} \\ 
+\midrule
+2019-10-29 & $16,919$ \\ 
+2019-10-30 & $17,156$ \\ 
+2019-10-31 & $15,418$ \\ 
+2019-11-01 & $12,158$ \\ 
+2019-11-02 & $7,062$ \\ 
+2019-11-03 & $7,146$ \\ 
+2019-11-04 & $16,042$ \\ 
+\midrule 
+Package Total & $91,901$ \\ 
+\midrule
+\multicolumn{1}{l}{tidyverse} \\ 
+\midrule
+2019-10-29 & $19,012$ \\ 
+2019-10-30 & $19,641$ \\ 
+2019-10-31 & $18,700$ \\ 
+2019-11-01 & $14,950$ \\ 
+2019-11-02 & $9,458$ \\ 
+2019-11-03 & $9,779$ \\ 
+2019-11-04 & $20,111$ \\ 
+\midrule 
+Package Total & $111,651$ \\ 
+\bottomrule
+\end{longtable}
+
+
+\end{document}

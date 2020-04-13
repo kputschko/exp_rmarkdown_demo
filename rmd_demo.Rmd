@@ -1,0 +1,149 @@
+---
+title: "R Markdown Demo"
+author: "Kevin Putschko"
+date: "Wednesday, August 28, 2019"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+
+```{r Dynamic Data, include=FALSE}
+our_words <- tribble(~Word, ~Description,
+  "jazz", "A genre of music",
+  "phrase_02", "A word to describe furniture",
+  "phrase_03", "Another word to describe furniture",
+  "phrase_04", "A word to describe population density",
+  "phrase_05", "Your favorite musician or band",
+  "phrase_06", "Something on your face",
+  "phrase_07", "Your first favorite thing",
+  "phrase_08", "Your second favorite thing",
+  "phrase_09", "Your third favorite thing",
+  "phrase_10", "An oddly specific period of time",
+  "phrase_11", "Something you worry about",
+  "phrase_12", "A roller coaster stalls out, your cart gets stuck just beyond the highest peak.  How do you feel?",
+  "phrase_13", "This is a constant threat",
+  "phrase_14", "How would you describe people in a Subway",
+  "phrase_15", "How would you describe people in a NYC subway",
+  "phrase_16", "What does a NYC subway kind of smell like?"
+)
+```
+
+```{r Intentionally Left Blank}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.prep_words <- 
+  our_words %>% 
+  rowid_to_column("phrase") %>% 
+  select(-Description) %>% 
+  deframe()
+
+```
+
+
+### Introduction
+
+R Markdown is a powerful tool for generating dynamic reports.  It allows us to seamlessly include R functions and data values in a HTML, Word, or PDF document.  Though the data may change, the structure and wording of the report does not.  Ahead you will see how easy it is to interweave dynamic values with static reporting.
+
+This passage comes from a diary of [Craig Mod][A1], who walked over 600 miles throughout Japan - without trains, without cars, without bikes, just his feet.  The full article can be found on [Wired](https://www.wired.com/story/six-weeks-100s-miles-hours-glorious-boredom-japan/).
+
+### What You Said
+
+> The **`r .prep_words[1]`** cafe was tiny, with a few **`r .prep_words[2]`** wood tables, a record collection on display, and two **`r .prep_words[3]`** speakers. The owner, in his 70s, wore a porkpie hat and a sleeve garter. I’d stumbled into this place during a long walk through a stretch of **`r .prep_words[4]`** Japan. I had a coffee while listening to an original pressing of **`r .prep_words[5]`** performing in Tokyo, and afterward, the owner looked me in the **`r .prep_words[6]`** and said: "I want you to give me a present. I want you to tell me one thing you love about Japan."
+
+> I thought for a second, and unable to name just one, answered, with overly earnest awkwardness: the **`r .prep_words[7]`**, the **`r .prep_words[8]`**, the **`r .prep_words[9]`**. I’m an American, so I suppose these things are on my mind. But I’ve also lived in Japan for nearly 20 years, and these qualities still impress me. When I walked into the **`r .prep_words[1]`** cafe, I had been walking for **`r .prep_words[10]`** across the country and had never once worried about my **`r .prep_words[11]`**. It's not that I feel especially **`r .prep_words[12]`** when walking around the US, but I feel the constant hum of **`r .prep_words[13]`** in the background. In contrast, on this walk in Japan everyone was **`r .prep_words[14]`**. **`r .prep_words[15]`**, even. Sometimes a bit bossy, but never malicious. Did I have to sneak out of a barely functioning inn in the middle of the night because the room smelled overbearingly of **`r .prep_words[16]`**? Sure. But what I saw around me were people who were taken care of — by their families, communities, government — a feeling which, in turn, made me feel hopeful in the biggest, most cosmic way of being hopeful.
+
+![~*I'll put this caption here*~](https://www.tokyoweekender.com/wp-content/uploads/2015/02/rural-japan.jpg)
+
+---
+
+### Comparison
+
+What You Said      | Actual Words
+--------------     | -------------
+`r .prep_words[1]` | Jazz
+`r .prep_words[2]` | Polished
+`r .prep_words[3]` | Beautiful
+`r .prep_words[4]` | Rural
+`r .prep_words[5]` | Miles Davis
+`r .prep_words[6]` | Eye
+`r .prep_words[7]` | Health Care System
+`r .prep_words[8]` | Lack of Guns
+`r .prep_words[9]` | Safety
+`r .prep_words[10]`| 25 Days
+`r .prep_words[11]`| Safety
+`r .prep_words[12]`| Unsafe
+`r .prep_words[13]`| Violence
+`r .prep_words[14]`| Courteous
+`r .prep_words[15]`| Lovely
+`r .prep_words[16]`| Urine
+
+### The Original Passage
+
+The **jazz** cafe was tiny, with a few **polished** wood tables, a record collection on display, and two **beautiful** speakers. The owner, in his 70s, wore a porkpie hat and a sleeve garter. I’d stumbled into this place during a long walk through a stretch of **rural** Japan. I had a coffee while listening to an original pressing of **Miles Davis** performing in Tokyo, and afterward, the owner looked me in the **eye** and said: "I want you to give me a present. I want you to tell me one thing you love about Japan."
+
+I thought for a second, and unable to name just one, answered, with overly earnest awkwardness: the **health care system**, the **lack of guns**, the **safety**. I’m an American, so I suppose these things are on my mind. But I’ve also lived in Japan for nearly 20 years, and these qualities still impress me. When I walked into the **jazz** cafe, I had been walking for **25 days** across the country and had never once worried about my **safety**. It's not that I feel especially **unsafe** when walking around the US, but I feel the constant hum of **violence** in the background. In contrast, on this walk in Japan everyone was **courteous**. **Lovely**, even. Sometimes a bit bossy, but never malicious. Did I have to sneak out of a barely functioning inn in the middle of the night because the room smelled overbearingly of **urine**? Sure. But what I saw around me were people who were taken care of—by their families, communities, government—a feeling which, in turn, made me feel hopeful in the biggest, most cosmic way of being hopeful.
+
+### Conclusion
+
+You can see how simple it is to prepare an R Markdown report that will be updated periodically with new data, or generate new tables, or prepare updated charts.  Though customization is limited, the benefits of a dynamic report are readily apparent, especially when connecting R and Gmail to automatically send reports to all interested parties.  

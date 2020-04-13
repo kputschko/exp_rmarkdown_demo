@@ -1,0 +1,40 @@
+---
+title: "Test Large Output"
+author: "Kevin Putschko"
+date: "11/25/2019"
+output: word_document
+params:
+  n: 100
+---
+
+`r Sys.time()`
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(tidyverse, flextable)
+pacman::p_load_gh("rstudio/gt")
+
+time <- 
+  system.time({
+    table <- 
+      pizzaplace %>% 
+      slice(1:params$n) %>% 
+      flextable() %>% 
+      add_header_lines(values = "Table 1.0 - Testing A Footer") %>% 
+      add_footer_lines(values = c("User: KP", str_glue("Date: {Sys.time()}")))
+
+  })
+```
+
+```{r print}
+
+tibble(label = "flextable",
+       rows = params$n,
+       runtime = time[[3]]) %>% 
+  write_csv(path = "C:/Users/exp01754/OneDrive/Data/cs_rmarkdown/testing/test_largeoutput/runtime.csv",
+            append = TRUE)
+
+table
+```
+

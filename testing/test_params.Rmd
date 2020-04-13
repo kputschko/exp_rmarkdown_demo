@@ -1,0 +1,15 @@
+---
+title: "test"
+author: "Kevin Putschko"
+date: "11/25/2019"
+output: html_document
+params:
+  table: mtcars
+  n: 100
+---
+
+```{r}
+params$table
+params$n
+```
+

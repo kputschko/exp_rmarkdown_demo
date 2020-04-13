@@ -1,0 +1,72 @@
+---
+title: "Stargazer"
+author: "Kevin Putschko"
+date: "11/8/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(tidyverse, stargazer, atable)
+
+data_list_raw <- 
+  dir("data/David Bosak", full.names = TRUE, pattern = ".sas7bdat") %>% 
+  enframe() %>% 
+  mutate(name = str_extract(value, "[^\\/][\\w]+(?=\\.)"),
+         data = map(value, haven::read_sas),
+         labels = map_depth(data, 2, attr, "label") %>% map(enframe, "columns", "labels")) %>% 
+  print()
+
+data_list <- 
+  data_list_raw %>% 
+  select(name, data) %>% 
+  deframe() 
+
+data_dictionary <- 
+  data_list_raw %>% 
+  select(name, labels) %>% 
+  mutate(labels = map(labels, unnest, labels)) %>% 
+  deframe()
+
+data_demog <- 
+  data_list %>% 
+  pluck("demog") %>% 
+  select(TRT, TRTC, AGE, AGEC, SEX, RACE)
+```
+
+
+# Testing Stargazer
+
+```{r sg, results='asis'}
+data_demog <- 
+  data_list %>% 
+  pluck("demog") %>% 
+  select(TRT, TRTC, AGE, AGEC, SEX, RACE)
+
+data_demog %>% stargazer(type = "latex")
+# data_demog %>% stargazer(type = "html")
+```
+
+# Testing ATable
+
+```{r at, warning=FALSE}
+pacman::p_load(kableExtra, Hmisc)
+
+atable_options_reset()
+
+data_demog %>% 
+  atable(target_cols = c("AGE", "AGEC", "RACE", "SEX"),
+         group_col = "TRTC", 
+         format_to = "Latex") %>% 
+  latex()
+
+
+           # format_to = "Word")
+         # format_to = "Raw")
+         # format_to = "HTML")
+         # format_to = "Console") %>% 
+  # kable()
+  # gt::gt()
+```
+

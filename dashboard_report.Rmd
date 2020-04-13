@@ -1,0 +1,209 @@
+---
+title: "Reporting Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+pacman::p_load(tidyverse, flexdashboard, shiny, rmarkdown)
+```
+
+Column {.sidebar}
+---
+```{r report-select}
+
+selectizeInput(inputId = "report_type", 
+               label = "Select Report to Run" %>% strong() %>% h4(),
+               multiple = TRUE,
+               choices = c("Stock Performance (HTML)"      = "r_stock",
+                           "CRAN Package Downloads (HTML)" = "r_cran",
+                           "Clinical Demographics (Word)"  = "r_demog",
+                           "Twitter Hashtags (PDF)"        = "r_tweet",
+                           "NOAA Hurricanes (PDF Latex)"   = "r_noaa"),
+               options = list(maxItems = 1, placeholder = "Report Selection"))
+
+```
+
+```{r report-params}
+hr()
+
+uiOutput("output_params")
+
+
+output$output_params <- renderUI({
+  
+  if (input$report_type %>% is_empty()) {
+    NULL 
+    
+  } else if (input$report_type == "r_tweet") {
+    textInput(inputId = "report_params",
+              label = "Provide hashtag for analysis",
+              value = "#rstats",
+              placeholder = "#hashtag")
+  
+  } else if (input$report_type == "r_stock") {
+    textInput(inputId = "report_params",
+              label = "Provide stock symbol for analysis",
+              value = "^GSPC",
+              placeholder = "Stock Symbol")
+  }
+  
+})
+
+```
+
+```{r report-create}
+hr()
+
+div(style = "display:inline-block;width:100%;text-align: center;",
+    downloadButton(outputId  = "report_output",
+                   label = " Generate Report"))
+```
+
+```{r report-open}
+div(style = "display:inline-block;width:100%;text-align: center;",
+    shiny::actionButton(inputId = "report_open",
+                        label = " View Report",
+                        icon = icon("book-open")))
+
+observeEvent(input$report_open, {
+  str_glue("file:///C:/Users/exp01754/OneDrive/Data/cs_rmarkdown/{template_output()}") %>% 
+    browseURL()
+})
+
+```
+
+```{r report-email}
+hr()
+
+textInput(inputId = "report_email_list",
+          label = "Send the Report" %>% strong() %>% h4(),
+          placeholder = "Enter Email Address(es)")
+
+div(style = "display:inline-block;width:100%;text-align: center;",
+    actionButton(inputId = "report_send",
+                 label = "Send Report",
+                 icon = icon("paper-plane")))
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Generating The Report
+
+This dashboard is used to select the type of report we want to run.  Depending on the report selected a user can control the input parameters.  Try selecting either the *Twitter* or *Stock* reports, and enter a stock or hashtag of interest.  
+
+Note that each of these reports demonstrates not only the benefits of using **R Markdown**, but also the benefits of different packages available for creating and displaying tables.  Many of the tables you'll find in these reports were modeled after tables found in **clinical reporting** documents.  
+
+The formats we present are **HTML**, **Word (.docx)**, **PDF**, and a special **PDF** format built with **LaTeX**.  The packages we use for preparing the tables are *kableExtra*, *flextable*, *reactable*, and the beta version of *gt*.  Each of these packages have their pros and cons, and unfortunately none of them are designed to tackle each use case as of yet.  Notably, the *RTF* format is generally unsupported.  The *gt* package supports some level of *RTF* output, but it is still in early development.
+
+### Placeholder 2
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Report Information
+
+`r 
+reactive({
+if (is_empty(input$report_type)) {
+"Please select a report to run."
+} else if (template_output() %in% dir()) {
+str_glue("The {template_display()} report was last run on {template_output() %>% file.mtime}, and is {template_output() %>% file.info() %>% pull(size) %>% scales::number_bytes()} in size.") 
+}}) 
+`
+
+```{r report-process}
+
+template_map <- 
+  tibble(label = c("r_stock", "r_cran", "r_demog", "r_tweet", "r_noaa"), 
+         template = c("template_finance", "template_cran", "template_clinical", "template_twitter", "template_latex"),
+         format = c("html", "html", "docx", "pdf", "pdf"),
+         display = c("Stock Performance (HTML)",
+                     "CRAN Package Downloads (HTML)",
+                     "Clinical Demographics (Word)",
+                     "Twitter Hashtags (PDF)",
+                     "NOAA Hurricanes (PDF Latex)"))
+
+
+template_meta <- reactive({
+  if (!is_empty(input$report_type)) {
+    template_map %>% filter(label == input$report_type)
+  }
+})
+
+template_file <- reactive({
+  if (!is_empty(input$report_type)) {
+    template_meta() %>% pull(template)
+  }
+})
+
+template_display <- reactive({
+  if (!is_empty(input$report_type)) {
+    template_meta() %>% pull(display)
+  }
+})
+
+template_format <- reactive({
+  if (!is_empty(input$report_type)) {
+    template_meta() %>% pull(format)
+  }
+})
+
+template_rmd <- reactive({
+  if (!is_empty(input$report_type)) {
+    template_file() %>% str_c(".Rmd")
+  }
+})
+
+template_output <- reactive({
+  if (!is_empty(input$report_type)) {
+    str_c(template_file(), template_format(), sep = ".")
+  }
+})
+
+runtime_prior <- reactive({
+  if (!is_empty(input$report_type)) {
+    dir(full.names = TRUE,
+        pattern = template_file()) %>%
+      file.info()
+  }
+})
+
+output$report_output <-
+  downloadHandler(
+    filename = str_c(template_file(), template_format(), sep = "."),
+    content = function(file) {
+      
+      template_params <- list(param_1 = input$report_params)
+      rmarkdown::render(input = template_rmd(),
+                        params = template_params,
+                        envir = new.env(parent = globalenv()))
+      
+    })
+
+```
+
+### Debug Window
+
+```{r}
+verbatimTextOutput("debug")
+
+output$debug <- renderPrint(list(input = input,
+                                 type = input$report_type,
+                                 parm = input$report_params,
+                                 run = input$report_run,
+                                 .format = template_format(),
+                                 .rmd = template_rmd(),
+                                 .out = template_output(),
+                                 # .prior = runtime_prior(),
+                                 # .post  = runtime_post(),
+                                 # .update = runtime_success(),
+                                 .file = template_file()
+                                 ))
+```
+
